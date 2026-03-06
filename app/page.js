@@ -144,14 +144,16 @@ function GrabarTab({ settings, onRecordingComplete }) {
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState('idle'); // idle, uploading, transcribing, analyzing, done
   const [statusMessage, setStatusMessage] = useState('');
+  const [recordError, setRecordError] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
   const streamRef = useRef(null);
+  const mimeTypeRef = useRef("audio/mp4");
 
   const startRecording = async () => {
     try {
-      setError(null);
+      setRecordError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
@@ -187,7 +189,7 @@ function GrabarTab({ settings, onRecordingComplete }) {
         setDuration((prev) => prev + 1);
       }, 1000);
     } catch (err) {
-      setError('Error accediendo al micrófono: ' + err.message);
+      setRecordError('Error accediendo al micrófono: ' + err.message);
       console.error(err);
     }
   };
@@ -208,7 +210,7 @@ function GrabarTab({ settings, onRecordingComplete }) {
   };
 
   const handleRecordingStop = async () => {
-    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
 
     try {
       setStatus('uploading');
@@ -216,7 +218,7 @@ function GrabarTab({ settings, onRecordingComplete }) {
 
       // Upload audio
       const formData = new FormData();
-      formData.append('file', audioBlob, 'recording.webm');
+      formData.append('file', audioBlob, 'recording.mp4');
 
       const uploadResponse = await fetch(
         `${settings.backendUrl}/upload?language=${settings.language}`,
@@ -328,7 +330,6 @@ function ConversacionesTab({
 }) {
   const [filter, setFilter] = useState('todas');
   const [localError, setLocalError] = useState(null);
-  const [setError] = useState(null);
 
   const filteredConversations = conversations.filter((conv) => {
     if (filter === 'todas') return true;
